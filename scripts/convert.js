@@ -23,7 +23,7 @@ async function processFiles() {
       
       const lines = text.split('\n');
       for (const line of lines) {
-        if (line.match(/^chapter\s+\d+/i) || line.match(/^[0-9]+\./i)) {
+        if (line.match(/^Глава\s+\d+/i) || line.match(/^[0-9]+\./i)) {
           // New chapter found
           if (currentChapter) {
             chapters.push(currentChapter);
