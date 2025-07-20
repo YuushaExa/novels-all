@@ -26,7 +26,7 @@ async function processFiles() {
         const trimmedLine = line.trim();
         
         // Check for new section (chapter, prologue, epilogue, etc.)
-        if (trimmedLine.match(/^(chapter\s+\d+|epilogue|prologue|appendix|[0-9]+\.)/i)) {
+        if (trimmedLine.match(/^(Глава\s+\d+|Эпилог|Пролог|appendix|[0-9]+\.)/i)) {
           // Finalize previous section if exists
           if (currentSection) {
             if (currentSection.content.trim()) { // Only add if content exists
