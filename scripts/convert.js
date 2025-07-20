@@ -17,42 +17,45 @@ async function processFiles() {
       const result = await mammoth.extractRawText({ path: filePath });
       const text = result.value;
       
-      // Split text into chapters
-      const chapters = [];
-      let currentChapter = null;
+      // Split text into sections
+      const sections = [];
+      let currentSection = null;
       
       const lines = text.split('\n');
       for (const line of lines) {
-        if (line.match(/^Глава\s+\d+/i) || line.match(/^[0-9]+\./i)) {
-          // New chapter found
-          if (currentChapter) {
-            chapters.push(currentChapter);
+        const trimmedLine = line.trim();
+        
+        // Check for new section (chapter, prologue, epilogue, etc.)
+        if (trimmedLine.match(/^(chapter\s+\d+|epilogue|prologue|appendix|[0-9]+\.)/i)) {
+          // Finalize previous section if exists
+          if (currentSection) {
+            if (currentSection.content.trim()) { // Only add if content exists
+              sections.push(currentSection);
+            }
           }
-          currentChapter = {
-            title: line.trim(),
-            content: []
+          // Start new section
+          currentSection = {
+            type: getSectionType(trimmedLine),
+            title: trimmedLine,
+            content: ''
           };
-        } else if (currentChapter) {
-          // Add content to current chapter
-          const trimmedLine = line.trim();
+        } else if (currentSection) {
+          // Add content to current section
           if (trimmedLine) {
-            currentChapter.content.push(trimmedLine);
+            currentSection.content += (currentSection.content ? '\n' : '') + trimmedLine;
           }
         }
       }
       
-      // Add the last chapter
-      if (currentChapter) {
-        chapters.push(currentChapter);
+      // Add the last section if it has content
+      if (currentSection && currentSection.content.trim()) {
+        sections.push(currentSection);
       }
       
       // Prepare final structure
       const jsonData = {
         filename: file.replace('.docx', ''),
-        chapters: chapters.map(chapter => ({
-          ...chapter,
-          content: chapter.content.join('\n')
-        }))
+        sections: sections
       };
       
       // Write JSON file
@@ -64,6 +67,17 @@ async function processFiles() {
       console.error(`Error processing ${file}:`, error);
     }
   }
+}
+
+// Helper function to determine section type
+function getSectionType(title) {
+  const lowerTitle = title.toLowerCase();
+  if (lowerTitle.includes('Глава')) return 'chapter';
+  if (lowerTitle.includes('Пролог')) return 'prologue';
+  if (lowerTitle.includes('Эпилог')) return 'epilogue';
+  if (lowerTitle.includes('appendix')) return 'appendix';
+  if (/^\d+\./.test(lowerTitle)) return 'numbered_section';
+  return 'section';
 }
 
 processFiles();
